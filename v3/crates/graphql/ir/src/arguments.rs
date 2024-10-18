@@ -83,7 +83,7 @@ pub(crate) fn follow_field_path_and_insert_value(
 /// Takes 'ArgumentPresets' annotations, data connector link argument presets, and
 /// existing arguments (which might be partially filled), and fill values in the
 /// existing arguments based on the presets
-pub(crate) fn process_argument_presets<'s, 'a>(
+pub fn process_argument_presets<'s, 'a>(
     data_connector_link: &'s metadata_resolve::DataConnectorLink,
     type_mappings: &'s BTreeMap<Qualified<CustomTypeName>, TypeMapping>,
     argument_presets: Option<&'a ArgumentPresets>,
@@ -369,8 +369,8 @@ pub(crate) fn map_argument_value_to_ndc_type(
 #[cfg(test)]
 mod test {
     use hasura_authn_core::{
-        Role, RoleAuthorization, Session, SessionVariable, SessionVariableList,
-        SessionVariableValue,
+        Role, RoleAuthorization, Session, SessionVariableList, SessionVariableName,
+        SessionVariableReference, SessionVariableValue,
     };
     use indexmap::IndexMap;
     use metadata_resolve::http::SerializableHeaderName;
@@ -380,7 +380,7 @@ mod test {
     use std::str::FromStr;
 
     fn make_test_session(
-        client_session_variables: HashMap<SessionVariable, SessionVariableValue>,
+        client_session_variables: HashMap<SessionVariableName, SessionVariableValue>,
     ) -> Session {
         let authenticated_session_variables = HashMap::new();
 
@@ -459,7 +459,10 @@ mod test {
         let mut additional = IndexMap::new();
         additional.insert(
             SerializableHeaderName::new("name".into()).unwrap(),
-            ValueExpression::SessionVariable(SessionVariable::from_str("x-name").unwrap()),
+            ValueExpression::SessionVariable(SessionVariableReference {
+                name: SessionVariableName::from_str("x-name").unwrap(),
+                passed_as_json: false,
+            }),
         );
         let http_headers = HttpHeadersPreset {
             forward: vec![],
@@ -471,7 +474,7 @@ mod test {
         // what session variables do we have?
         let mut client_session_variables = HashMap::new();
         client_session_variables.insert(
-            SessionVariable::from_str("x-name").unwrap(),
+            SessionVariableName::from_str("x-name").unwrap(),
             SessionVariableValue::new("Mr Horse"),
         );
 
